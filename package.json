@@ -1,0 +1,31 @@
+{
+  "name": "step-challenge-app",
+  "version": "1.0.0",
+  "description": "A clean, GitHub-inspired step tracking application for 30-day challenges",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server . -p 3000 -o",
+    "dev": "npx live-server .",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "keywords": [
+    "step-challenge",
+    "fitness",
+    "tracking",
+    "health",
+    "github-style",
+    "vanilla-js"
+  ],
+  "author": "Step Challenge Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/step-challenge-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/step-challenge-app/issues"
+  },
+  "homepage": "https://github.com/yourusername/step-challenge-app#readme",
+  "devDependencies": {},
+  "dependencies": {}
+}

@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step Challenge App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f7;
+            min-height: 100vh;
+            color: #1d1d1f;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: #86868b;
+            margin-bottom: 24px;
+        }
+
+        .header-stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+
+        .header-stat {
+            text-align: center;
+        }
+
+        .header-stat-number {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #1d1d1f;
+            line-height: 1;
+        }
+
+        .header-stat-label {
+            font-size: 0.9rem;
+            color: #86868b;
+            margin-top: 4px;
+        }
+
+        .header-stat-number.success-rate {
+            background: linear-gradient(135deg, #30d158, #00c851);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+        }
+
+        .header-stat-number.total-steps {
+            background: linear-gradient(135deg, #007aff, #5856d6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+        }
+
+        .challenge-container {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e5e5e7;
+        }
+
+        .challenge-header {
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f5f5f7;
+        }
+
+        .challenge-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        .participants-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .participant-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .participant-name {
+            width: 100px;
+            font-weight: 500;
+            color: #1d1d1f;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .days-container {
+            display: flex;
+            gap: 3px;
+            flex-wrap: nowrap;
+        }
+
+        .week-group {
+            display: flex;
+            gap: 3px;
+            margin-right: 8px;
+        }
+
+        .day-square {
+            width: 11px;
+            height: 11px;
+            border-radius: 2px;
+            background: #f5f5f7;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 1px solid #e5e5e7;
+        }
+
+        .day-square:hover {
+            transform: scale(1.2);
+            border-color: #007aff;
+        }
+
+        .day-square.no-data {
+            background: #f5f5f7;
+        }
+
+        .day-square.goal-missed {
+            background: #ff9500;
+            border-color: #e8840a;
+        }
+
+        .day-square.goal-met {
+            background: #30d158;
+            border-color: #28cd4f;
+        }
+
+        .day-square.daily-winner {
+            background: #007aff;
+            border-color: #0056b3;
+            position: relative;
+        }
+
+        .day-square.daily-winner::after {
+            content: '⭐';
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            font-size: 6px;
+            z-index: 5;
+        }
+
+        .tooltip {
+            position: absolute;
+            background: #1d1d1f;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 400;
+            white-space: nowrap;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: #1d1d1f transparent transparent transparent;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+
+        .admin-controls {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            z-index: 100;
+        }
+
+        .admin-toggle {
+            width: 48px;
+            height: 48px;
+            background: #86868b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(134,134,139,0.3);
+            transition: all 0.2s;
+        }
+
+        .admin-toggle:hover {
+            transform: scale(1.05);
+            background: #6d6d70;
+            box-shadow: 0 6px 20px rgba(134,134,139,0.4);
+        }
+
+        .admin-panel {
+            position: absolute;
+            bottom: 60px;
+            left: 0;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+            border: 1px solid #e5e5e7;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.2s;
+            min-width: 280px;
+        }
+
+        .admin-panel.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .admin-title {
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #1d1d1f;
+            font-size: 1rem;
+        }
+
+        .admin-form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .admin-input {
+            padding: 12px 16px;
+            border: 1px solid #d2d2d7;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            transition: border-color 0.2s;
+        }
+
+        .admin-input:focus {
+            outline: none;
+            border-color: #007aff;
+        }
+
+        .admin-button {
+            padding: 12px 20px;
+            background: #007aff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .admin-button:hover {
+            background: #0056b3;
+        }
+
+        .legend-toggle {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            background: #007aff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(0,122,255,0.3);
+            transition: all 0.2s;
+            z-index: 100;
+        }
+
+        .legend-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,122,255,0.4);
+        }
+
+        .legend-popup {
+            position: fixed;
+            bottom: 80px;
+            right: 24px;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+            border: 1px solid #e5e5e7;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.2s;
+            z-index: 99;
+            min-width: 200px;
+        }
+
+        .legend-popup.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .legend-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1d1d1f;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #1d1d1f;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-square {
+            width: 11px;
+            height: 11px;
+            border-radius: 2px;
+            border: 1px solid #e5e5e7;
+            flex-shrink: 0;
+        }
+
+        .edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            backdrop-filter: blur(8px);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+            border: 1px solid #e5e5e7;
+        }
+
+        .modal-header {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1d1d1f;
+            line-height: 1.3;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid #d2d2d7;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            margin-bottom: 24px;
+            background: #fafafa;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: #007aff;
+            background: white;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modal-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-button.primary {
+            background: #007aff;
+            color: white;
+        }
+
+        .modal-button.primary:hover {
+            background: #0056b3;
+        }
+
+        .modal-button.secondary {
+            background: #f5f5f7;
+            color: #1d1d1f;
+        }
+
+        .modal-button.secondary:hover {
+            background: #e5e5e7;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .header-stats {
+                gap: 24px;
+                flex-wrap: wrap;
+            }
+            
+            .challenge-container {
+                padding: 24px 20px;
+            }
+            
+            .participant-name {
+                width: 80px;
+                font-size: 0.9rem;
+            }
+            
+            .challenge-header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+            
+            .legend-toggle {
+                bottom: 16px;
+                right: 16px;
+            }
+            
+            .admin-controls {
+                bottom: 80px;
+                left: 16px;
+            }
+            
+            .admin-panel {
+                bottom: 60px;
+                left: 16px;
+                right: 16px;
+                width: auto;
+                min-width: auto;
+            }
+            
+            .legend-popup {
+                bottom: 72px;
+                right: 16px;
+                left: 16px;
+                width: auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .days-container {
+                overflow-x: auto;
+                padding-bottom: 8px;
+            }
+            
+            .participant-row {
+                gap: 12px;
+            }
+            
+            .participant-name {
+                width: 70px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Step Challenge</h1>
+            <p>30 days • 10,000 steps daily</p>
+            
+            <div class="header-stats">
+                <div class="header-stat">
+                    <div class="header-stat-number" id="totalParticipants">5</div>
+                    <div class="header-stat-label">People</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-number" id="currentDay">8</div>
+                    <div class="header-stat-label">Days</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-number success-rate" id="successRate">76%</div>
+                    <div class="header-stat-label">Success</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-number total-steps" id="totalSteps">2.1M</div>
+                    <div class="header-stat-label">Steps</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="challenge-container">
+            <div class="challenge-header">
+                <div class="challenge-title" id="challengeTitle">March 2024</div>
+            </div>
+
+            <div class="participants-grid" id="participantGrid">
+                <!-- Participant rows will be generated -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Controls -->
+    <div class="admin-controls">
+        <button class="admin-toggle" onclick="toggleAdmin()">⚙️</button>
+        
+        <div class="admin-panel" id="adminPanel">
+            <div class="admin-title">Admin Controls</div>
+            <div class="admin-form">
+                <input type="text" class="admin-input" id="adminParticipantName" placeholder="Add participant">
+                <button class="admin-button" onclick="addParticipant()">Add Participant</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend Toggle -->
+    <button class="legend-toggle" onclick="toggleLegend()">?</button>
+    
+    <!-- Legend Popup -->
+    <div class="legend-popup" id="legendPopup">
+        <div class="legend-title">Legend</div>
+        <div class="legend-item">
+            <div class="legend-square" style="background: #f5f5f7;"></div>
+            <span>No data</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-square" style="background: #ff9500;"></div>
+            <span>&lt;10k steps</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-square" style="background: #30d158;"></div>
+            <span>≥10k steps</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-square" style="background: #007aff;"></div>
+            <span>Daily winner ⭐</span>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="edit-modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalTitle">Edit Steps</div>
+            <input type="number" class="modal-input" id="modalInput" placeholder="Enter step count">
+            <div class="modal-buttons">
+                <button class="modal-button secondary" onclick="closeModal()">Cancel</button>
+                <button class="modal-button primary" onclick="saveSteps()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Initialize challenge data
+        let participants = [
+            { id: 1, name: 'Aida' },
+            { id: 2, name: 'Angelika' },
+            { id: 3, name: 'Anne' },
+            { id: 4, name: 'Aga' },
+            { id: 5, name: 'Anabel' }
+        ];
+
+        let stepData = {
+            1: { 1: 10015, 2: 15390, 3: 10145, 4: 12500, 5: 9800, 6: 11200, 7: 10500 },
+            2: { 1: 18262, 2: 10458, 3: 12027, 4: 11800, 5: 13200, 6: 10900, 7: 14500 },
+            3: { 1: 0, 2: 10147, 3: 0, 4: 9500, 5: 10200, 6: 8900, 7: 11100 },
+            4: { 1: 10027, 2: 10440, 3: 10119, 4: 10300, 5: 9600, 6: 12800, 7: 10400 },
+            5: { 1: 11539, 2: 10569, 3: 10097, 4: 11900, 5: 10800, 6: 10300, 7: 9400 }
+        };
+
+        const DAYS_IN_CHALLENGE = 30;
+        const STEP_GOAL = 10000;
+
+        let currentEditingParticipant = null;
+        let currentEditingDay = null;
+
+        function generateDates() {
+            const dates = [];
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 7);
+            
+            for (let i = 0; i < DAYS_IN_CHALLENGE; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                dates.push({
+                    full: date.toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    }),
+                    short: date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }),
+                    day: date.getDate()
+                });
+            }
+            return dates;
+        }
+
+        function getSquareClass(participantId, day) {
+            const steps = stepData[participantId]?.[day] || 0;
+            
+            if (steps === 0) return 'no-data';
+            
+            // Check if daily winner
+            const dailyMax = Math.max(...participants.map(p => stepData[p.id]?.[day] || 0));
+            if (steps === dailyMax && steps >= STEP_GOAL) {
+                return 'daily-winner';
+            }
+            
+            // Check if goal met
+            if (steps >= STEP_GOAL) {
+                return 'goal-met';
+            }
+            
+            // Goal missed
+            return 'goal-missed';
+        }
+
+        function showTooltip(event, participantName, day, steps) {
+            const tooltip = document.getElementById('tooltip');
+            const dates = generateDates();
+            const date = dates[day - 1];
+            
+            let statusText = '';
+            if (steps === 0) {
+                statusText = 'No data';
+            } else if (steps >= STEP_GOAL) {
+                const dailyMax = Math.max(...participants.map(p => stepData[p.id]?.[day] || 0));
+                if (steps === dailyMax) {
+                    statusText = `${steps.toLocaleString()} steps • Daily winner ⭐`;
+                } else {
+                    statusText = `${steps.toLocaleString()} steps • Goal achieved`;
+                }
+            } else {
+                const shortfall = STEP_GOAL - steps;
+                statusText = `${steps.toLocaleString()} steps • ${shortfall.toLocaleString()} short`;
+            }
+            
+            tooltip.innerHTML = `
+                <div style="font-weight: 500;">${participantName}</div>
+                <div style="opacity: 0.8; font-size: 0.8rem; margin: 2px 0;">${date.full}</div>
+                <div>${statusText}</div>
+            `;
+            
+            const rect = event.target.getBoundingClientRect();
+            const tooltipRect = tooltip.getBoundingClientRect();
+            
+            let left = rect.left + rect.width / 2 - tooltipRect.width / 2;
+            let top = rect.top - tooltipRect.height - 12;
+            
+            // Keep tooltip on screen
+            if (left < 10) left = 10;
+            if (left + tooltipRect.width > window.innerWidth - 10) {
+                left = window.innerWidth - tooltipRect.width - 10;
+            }
+            if (top < 10) top = rect.bottom + 12;
+            
+            tooltip.style.left = left + 'px';
+            tooltip.style.top = top + 'px';
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').classList.remove('show');
+        }
+
+        function openEditModal(participantId, day) {
+            const participant = participants.find(p => p.id === participantId);
+            const currentSteps = stepData[participantId]?.[day] || 0;
+            const dates = generateDates();
+            
+            currentEditingParticipant = participantId;
+            currentEditingDay = day;
+            
+            document.getElementById('modalTitle').textContent = 
+                `${participant.name} • ${dates[day - 1].full}`;
+            document.getElementById('modalInput').value = currentSteps || '';
+            document.getElementById('editModal').style.display = 'flex';
+            
+            setTimeout(() => {
+                document.getElementById('modalInput').focus();
+                document.getElementById('modalInput').select();
+            }, 100);
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+            currentEditingParticipant = null;
+            currentEditingDay = null;
+        }
+
+        function saveSteps() {
+            const steps = parseInt(document.getElementById('modalInput').value) || 0;
+            
+            if (!stepData[currentEditingParticipant]) {
+                stepData[currentEditingParticipant] = {};
+            }
+            
+            stepData[currentEditingParticipant][currentEditingDay] = steps;
+            
+            renderGrid();
+            updateStats();
+            closeModal();
+        }
+
+        function renderGrid() {
+            const participantGrid = document.getElementById('participantGrid');
+            participantGrid.innerHTML = '';
+            
+            participants.forEach(participant => {
+                const row = document.createElement('div');
+                row.className = 'participant-row';
+                
+                // Group days into weeks for better visual spacing
+                let daysHTML = '';
+                for (let week = 0; week < 5; week++) {
+                    daysHTML += '<div class="week-group">';
+                    for (let dayInWeek = 0; dayInWeek < 7; dayInWeek++) {
+                        const day = week * 7 + dayInWeek + 1;
+                        if (day <= DAYS_IN_CHALLENGE) {
+                            const steps = stepData[participant.id]?.[day] || 0;
+                            const squareClass = getSquareClass(participant.id, day);
+                            
+                            daysHTML += `
+                                <div class="day-square ${squareClass}" 
+                                     data-participant="${participant.id}" 
+                                     data-day="${day}"
+                                     data-steps="${steps}"
+                                     onmouseenter="showTooltip(event, '${participant.name}', ${day}, ${steps})"
+                                     onmouseleave="hideTooltip()"
+                                     onclick="openEditModal(${participant.id}, ${day})">
+                                </div>
+                            `;
+                        }
+                    }
+                    daysHTML += '</div>';
+                }
+                
+                row.innerHTML = `
+                    <div class="participant-name">${participant.name}</div>
+                    <div class="days-container">
+                        ${daysHTML}
+                    </div>
+                `;
+                
+                participantGrid.appendChild(row);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('totalParticipants').textContent = participants.length;
+            
+            // Calculate success rate
+            let totalEntries = 0;
+            let successfulEntries = 0;
+            
+            participants.forEach(participant => {
+                for (let day = 1; day <= 8; day++) {
+                    const steps = stepData[participant.id]?.[day] || 0;
+                    if (steps > 0) {
+                        totalEntries++;
+                        if (steps >= STEP_GOAL) {
+                            successfulEntries++;
+                        }
+                    }
+                }
+            });
+            
+            const successRate = totalEntries > 0 ? Math.round((successfulEntries / totalEntries) * 100) : 0;
+            document.getElementById('successRate').textContent = successRate + '%';
+            
+            // Calculate total steps
+            let totalSteps = 0;
+            participants.forEach(participant => {
+                Object.values(stepData[participant.id] || {}).forEach(steps => {
+                    totalSteps += steps || 0;
+                });
+            });
+            
+            document.getElementById('totalSteps').textContent = (totalSteps / 1000000).toFixed(1) + 'M';
+        }
+
+        function addParticipant() {
+            const nameInput = document.getElementById('adminParticipantName');
+            const name = nameInput.value.trim();
+            
+            if (name) {
+                const newId = Math.max(...participants.map(p => p.id)) + 1;
+                participants.push({ id: newId, name: name });
+                nameInput.value = '';
+                renderGrid();
+                updateStats();
+                // Close admin panel after adding
+                document.getElementById('adminPanel').classList.remove('show');
+            }
+        }
+
+        function toggleAdmin() {
+            const adminPanel = document.getElementById('adminPanel');
+            adminPanel.classList.toggle('show');
+        }
+
+        function toggleLegend() {
+            const legendPopup = document.getElementById('legendPopup');
+            legendPopup.classList.toggle('show');
+        }
+
+        // Close panels when clicking outside
+        document.addEventListener('click', function(e) {
+            const legendPopup = document.getElementById('legendPopup');
+            const legendToggle = document.querySelector('.legend-toggle');
+            const adminPanel = document.getElementById('adminPanel');
+            const adminToggle = document.querySelector('.admin-toggle');
+            
+            if (!legendPopup.contains(e.target) && !legendToggle.contains(e.target)) {
+                legendPopup.classList.remove('show');
+            }
+            
+            if (!adminPanel.contains(e.target) && !adminToggle.contains(e.target)) {
+                adminPanel.classList.remove('show');
+            }
+        });
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            renderGrid();
+            updateStats();
+        });
+
+        // Handle Enter key for admin input and modal input
+        document.getElementById('adminParticipantName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addParticipant();
+            }
+        });
+
+        document.getElementById('modalInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                saveSteps();
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
